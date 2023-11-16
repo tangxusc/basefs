@@ -248,13 +248,13 @@ c. apiversion in (v1.15.0,v1.23.0] : 'kubeadm.k8s.io/v1beta1')
 docker default sock addr : "/var/run/dockershim.sock"
 containerd default sock addr : "/run/containerd/containerd.sock"
 
-3, imageRepository for kubeadm.yml
+3. imageRepository for kubeadm.yml
 
 imageList use native repo `registry.k8s.io` which generated from imageRepository of kubeadm.yml ,
 
 we modify the imageRepository to `sea.hub:5000` for pulling from our private registry.
 
-4, dns imageRepository for kubeadm.yml
+4. dns imageRepository for kubeadm.yml
 
 if output of `kubeadm config images list` looks like `registry.k8s.io/coredns/coredns:1.8.6`,
 
@@ -265,7 +265,7 @@ dns:
   imageRepository: ${repo domain}/coredns
 ```
 
-5, containerd config file:
+5. containerd config file:
 keep same pause version with imageList.
 
 if imageList use `pause:3.6`,then `sandbox_image = "${repo domain}/pause:3.6"`

@@ -59,7 +59,6 @@ install_url="https://sealer.oss-cn-beijing.aliyuncs.com/auto-build"
 ##https://github.com/osemp/moby/releases/download/v19.03.14/docker-amd64.tar.gz
 ##registry ${ARCH} image: ghcr.io/osemp/distribution-amd64/distribution:latest
 if [ "${cri}" = "docker" ]; then
-  docker_version="19.03.14"
   docker_url="https://github.com/osemp/moby"
   cri_tarball_amd64="docker-amd64.tar.gz"
   cri_tarball_arm64="docker-arm64.tar.gz"
@@ -76,7 +75,7 @@ else
   cri_tarball_arm64_url="${containerd_url}/releases/download/v${containerd_version}/${cri_tarball_arm64}"
   registry_tarball_amd64="nerdctl-amd64-registry-image.tar.gz"
   registry_tarball_arm64="nerdctl-arm64-registry-image.tar.gz"
-  echo "download containerd version ${containerd_version}"
+  echo "download containerd version ${containerd_version} ,url ${cri_tarball_amd64_url}"
 fi
 
 registry_tarball_amd64_url="${install_url}/${registry_tarball_amd64}"
@@ -109,8 +108,8 @@ wget -q "${seautil_tarball_amd64_url}" && tar zxvf "${seautil_tarball_amd64}" -C
 wget -q "${seautil_tarball_arm64_url}" && tar zxvf "${seautil_tarball_arm64}" -C "arm64/bin"
 
 echo "download cri with ${cri}"
-wget -q "${cri_tarball_amd64_url}" && mv "${cri_tarball_amd64}" "amd64/cri/docker.tar.gz"
-wget -q "${cri_tarball_arm64_url}" && mv "${cri_tarball_arm64}" "arm64/cri/docker.tar.gz"
+wget -q "${cri_tarball_amd64_url}" && mv "${cri_tarball_amd64}" "amd64/cri/cri-${cri}.tar.gz"
+wget -q "${cri_tarball_arm64_url}" && mv "${cri_tarball_arm64}" "arm64/cri/cri-${cri}.tar.gz"
 
 echo "download distribution image ${registry_tarball_amd64}"
 wget -q "${registry_tarball_amd64_url}" && mv "${registry_tarball_amd64}" "amd64/images"
@@ -119,6 +118,8 @@ wget -q "${registry_tarball_arm64_url}" && mv "${registry_tarball_arm64}" "arm64
 echo "download kubeadm kubectl kubelet version ${kube_install_version:-}"
 
 for i in "kubeadm" "kubectl" "kubelet"; do
-  sudo curl -L "https://dl.k8s.io/release/${kube_install_version}/bin/linux/amd64/${i}" -o "amd64/bin/${i}"
-  sudo curl -L "https://dl.k8s.io/release/${kube_install_version}/bin/linux/arm64/${i}" -o "arm64/bin/${i}"
+  echo "download ${i} version ${kube_install_version} for amd64"
+  curl -L "https://dl.k8s.io/release/${kube_install_version}/bin/linux/amd64/${i}" -o "amd64/bin/${i}"
+  echo "download ${i} version ${kube_install_version} for arm64"
+  curl -L "https://dl.k8s.io/release/${kube_install_version}/bin/linux/arm64/${i}" -o "arm64/bin/${i}"
 done

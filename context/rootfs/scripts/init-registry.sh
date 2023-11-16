@@ -45,16 +45,6 @@ startRegistry() {
     done
 }
 
-load_images() {
-for image in "$image_dir"/*
-do
- if [ -f "${image}" ]
- then
-  docker load -q -i "${image}"
- fi
-done
-}
-
 check_registry() {
     n=1
     while (( n <= 3 ))
@@ -71,8 +61,6 @@ check_registry() {
         sleep 3
     done
 }
-
-load_images
 
 ## rm container if exist.
 if [ "$(docker ps -aq -f name=$container)" ]; then

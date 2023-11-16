@@ -43,6 +43,9 @@ disable_selinux() {
     sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
     setenforce 0
   fi
+  if ! getenforce | grep Disabled;then
+    setenforce 0 || true
+  fi
 }
 
 load_images() {

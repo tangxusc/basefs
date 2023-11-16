@@ -34,6 +34,7 @@ rm -f /usr/bin/vpnkit
 rm -f /usr/bin/containerd-rootless-setuptool.sh
 rm -f /usr/bin/containerd-rootless.sh
 rm -f /usr/bin/nerdctl
+rm -f /usr/bin/docker
 rm -f /usr/bin/seautil
 
 rm -f /etc/crictl.yaml

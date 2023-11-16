@@ -65,9 +65,24 @@ done
 
 version_compare() { printf '%s\n%s\n' "$2" "$1" | sort -V -C; } ## version_compare $a $b:  a>=b
 
-ARCH=$(case "$(uname -m)" in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo "unsupported architecture" "$(uname -m)" && exit 1 ;; esac)
+ARCH=$(uname -m)
 
-if [ "$k8s_version" = "" ]; then echo "pls use --k8s-version to set Clusterimage kubernetes version" && exit 1; else echo "$k8s_version" | grep "v" || k8s_version="v${k8s_version}"; fi
+ARCH=$(uname -m)
+
+if [[ $ARCH == "x86_64" || $ARCH == "amd64" ]]; then
+    ARCH="amd64"
+elif [[ $ARCH == "aarch64" || $ARCH == "arm64" ]]; then
+    echo "arm64"
+else
+    eecho "unsupported architecture $ARCH";
+    exit 1;
+fi
+
+if [ "$k8s_version" = "" ]; then
+  echo "pls use --k8s-version to set Clusterimage kubernetes version" && exit 1;
+else
+  echo "$k8s_version" | grep "v" || k8s_version="v${k8s_version}";
+fi
 #cri=$([[ -n "$cri" ]] && echo "$cri" || echo docker)
 cri=$( (version_compare "$k8s_version" "v1.24.0" && echo "containerd") || ([[ -n "$cri" ]] && echo "$cri" || echo "docker"))
 if [[ -z "$buildName" ]]; then
@@ -80,32 +95,40 @@ echo "cri: ${cri}, kubernetes version: ${k8s_version}, build image name: ${build
 kubeadmApiVersion=$( (version_compare "$k8s_version" "v1.23.0" && echo 'kubeadm.k8s.io\/v1beta3') || (version_compare "$k8s_version" "v1.15.0" && echo 'kubeadm.k8s.io\/v1beta2') ||
   (version_compare "$k8s_version" "v1.13.0" && echo 'kubeadm.k8s.io\/v1beta1') || (echo "Version must be greater than 1.13: ${k8s_version}" && exit 1))
 
-workdir="$(mktemp -d auto-build-XXXXX)" && sudo cp -r context "${workdir}" && cd "${workdir}/context" && sudo cp -rf "${cri}"/* .
+workdir="$(mktemp -d auto-build-XXXXX)" &&  cp -r context "${workdir}" && cd "${workdir}/context" &&  cp -rf "${cri}"/* .
 
 # shellcheck disable=SC1091
-sudo chmod +x version.sh download.sh && export kube_install_version="$k8s_version" && source version.sh
+chmod +x version.sh download.sh && export kube_install_version="$k8s_version" && source version.sh
 ./download.sh "${cri}"
 
-sudo chmod +x amd64/bin/kube* && sudo chmod +x arm64/bin/kube*
-#download v0.9.1 sealer
-sudo wget https://github.com/sealerio/sealer/releases/download/v0.9.1/sealer-v0.9.1-linux-amd64.tar.gz && tar -xvf sealer-v0.9.1-linux-amd64.tar.gz -C /usr/bin
-sudo sed -i "s/v1.19.8/$k8s_version/g" rootfs/etc/kubeadm.yml ##change k8s_version
-sudo sed -i "s/v1.19.8/$k8s_version/g" rootfs/etc/kubeadm.yml.tmpl ##change k8s_version
-if [[ "$cri" == "containerd" ]]; then sudo sed -i "s/\/var\/run\/dockershim.sock/\/run\/containerd\/containerd.sock/g" rootfs/etc/kubeadm.yml; fi
-if [[ "$cri" == "containerd" ]]; then sudo sed -i "s/\/var\/run\/dockershim.sock/\/run\/containerd\/containerd.sock/g" rootfs/etc/kubeadm.yml.tmpl; fi
-sudo sed -i "s/kubeadm.k8s.io\/v1beta2/$kubeadmApiVersion/g" rootfs/etc/kubeadm.yml
-sudo sed -i "s/kubeadm.k8s.io\/v1beta2/$kubeadmApiVersion/g" rootfs/etc/kubeadm.yml.tmpl
-sudo ./"${ARCH}"/bin/kubeadm config images list --config "rootfs/etc/kubeadm.yml"
-sudo mkdir -p rootfs/manifests
-sudo ./"${ARCH}"/bin/kubeadm config images list --config "rootfs/etc/kubeadm.yml" 2>/dev/null | sed "/WARNING/d" >>imageList
-if [ "$(sudo ./"${ARCH}"/bin/kubeadm config images list --config rootfs/etc/kubeadm.yml 2>/dev/null | grep -c "coredns/coredns")" -gt 0 ]; then sudo sed -i "s/#imageRepository/imageRepository/g" rootfs/etc/kubeadm.yml.tmpl; fi
-sudo sed -i "s/registry.k8s.io/sea.hub:5000/g" rootfs/etc/kubeadm.yml.tmpl
+chmod +x amd64/bin/kube* && chmod +x arm64/bin/kube*
+#download v0.11.0 sealer
+wget https://github.com/sealerio/sealer/releases/download/v0.11.0/sealer-v0.11.0-linux-${ARCH}.tar.gz && tar -xvf sealer-v0.11.0-linux-${ARCH}.tar.gz -C /usr/bin
+sed -i "s/v1.19.8/$k8s_version/g" rootfs/etc/kubeadm.yml ##change k8s_version
+sed -i "s/v1.19.8/$k8s_version/g" rootfs/etc/kubeadm.yml.tmpl ##change k8s_version
+if [[ "$cri" == "containerd" ]]; then
+  sed -i "s/\/var\/run\/dockershim.sock/\/run\/containerd\/containerd.sock/g" rootfs/etc/kubeadm.yml;
+fi
+if [[ "$cri" == "containerd" ]]; then
+  sed -i "s/\/var\/run\/dockershim.sock/\/run\/containerd\/containerd.sock/g" rootfs/etc/kubeadm.yml.tmpl;
+fi
+sed -i "s/kubeadm.k8s.io\/v1beta2/$kubeadmApiVersion/g" rootfs/etc/kubeadm.yml
+sed -i "s/kubeadm.k8s.io\/v1beta2/$kubeadmApiVersion/g" rootfs/etc/kubeadm.yml.tmpl
+./"${ARCH}"/bin/kubeadm config images list --config "rootfs/etc/kubeadm.yml"
+mkdir -p rootfs/manifests
+./"${ARCH}"/bin/kubeadm config images list --config "rootfs/etc/kubeadm.yml" 2>/dev/null | sed "/WARNING/d" >>imageList
+if [ "$(./"${ARCH}"/bin/kubeadm config images list --config rootfs/etc/kubeadm.yml 2>/dev/null | grep -c "coredns/coredns")" -gt 0 ]; then
+  sed -i "s/#imageRepository/imageRepository/g" rootfs/etc/kubeadm.yml.tmpl;
+fi
+sed -i "s/registry.k8s.io/sea.hub:5000/g" rootfs/etc/kubeadm.yml.tmpl
 pauseImage=$(./"${ARCH}"/bin/kubeadm config images list --config "rootfs/etc/kubeadm.yml" 2>/dev/null | sed "/WARNING/d" | grep pause)
-if [ -f "rootfs/etc/dump-config.toml" ]; then sudo sed -i "s/sea.hub:5000\/pause:3.6/$(echo "$pauseImage" | sed 's/\//\\\//g')/g" rootfs/etc/dump-config.toml; fi
-sudo sealer build -t "docker.io/sealerio/kubernetes:${k8s_version}" -f Kubefile
+if [ -f "rootfs/etc/dump-config.toml" ]; then
+  sed -i "s/sea.hub:5000\/pause:3.6/$(echo "$pauseImage" | sed 's/\//\\\//g')/g" rootfs/etc/dump-config.toml;
+fi
+sealer build -t "docker.io/sealerio/kubernetes:${k8s_version}" -f Kubefile
 if [[ "$push" == "true" ]]; then
   if [[ -n "$username" ]] && [[ -n "$password" ]]; then
-    sudo sealer login "$(echo "docker.io" | cut -d "/" -f1)" -u "${username}" -p "${password}"
+    sealer login "$(echo "docker.io" | cut -d "/" -f1)" -u "${username}" -p "${password}"
   fi
-  sudo sealer push "docker.io/sealerio/kubernetes:${k8s_version}"
+  sealer push "docker.io/sealerio/kubernetes:${k8s_version}"
 fi

@@ -1,10 +1,10 @@
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 localAPIEndpoint:
   advertiseAddress: 172.16.0.181
   bindPort: 6443
 nodeRegistration:
-  criSocket: /var/run/dockershim.sock
+  criSocket: /run/containerd/containerd.sock
   taints: null
 
 ---
@@ -19,7 +19,7 @@ apiServer:
     audit-policy-file: /etc/kubernetes/audit-policy.yml
     enable-aggregator-routing: "true"
     etcd-servers: https://172.16.0.181:2379
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+    feature-gates: ""
   extraVolumes:
   - hostPath: /etc/kubernetes
     mountPath: /etc/kubernetes
@@ -34,12 +34,12 @@ apiServer:
     name: localtime
     pathType: File
     readOnly: true
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta3
 controlPlaneEndpoint: apiserver.cluster.local:6443
 controllerManager:
   extraArgs:
-    experimental-cluster-signing-duration: 876000h
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+    cluster-signing-duration: 876000h
+    feature-gates: ""
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime
@@ -56,13 +56,13 @@ etcd:
       listen-metrics-urls: http://0.0.0.0:2381
 imageRepository: {{or .RegistryURL "sea.hub:5000"}}
 kind: ClusterConfiguration
-kubernetesVersion: v1.19.8
+kubernetesVersion: v1.27.1
 networking:
   podSubnet: 100.64.0.0/10
   serviceSubnet: 10.96.0.0/22
 scheduler:
   extraArgs:
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+    feature-gates: ""
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime
