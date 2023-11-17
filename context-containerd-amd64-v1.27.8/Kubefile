@@ -1,0 +1,10 @@
+FROM scratch
+COPY rootfs .
+COPY bin ./bin
+COPY cri ./cri
+COPY images ./images
+COPY imageList manifests
+LABEL "cluster.alpha.sealer.io/cluster-runtime-version"="v1.27.8"
+LABEL "cluster.alpha.sealer.io/cluster-runtime-type"="kubernetes"
+LABEL "cluster.alpha.sealer.io/container-runtime-type"="containerd"
+LABEL "cluster.alpha.sealer.io/container-runtime-version"="1.7.8"

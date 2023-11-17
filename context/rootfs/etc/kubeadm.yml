@@ -4,9 +4,16 @@ localAPIEndpoint:
   bindPort: 6443
 nodeRegistration:
   criSocket: /run/containerd/containerd.sock
-  taints: null
-
 ---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: v1.27.8
+imageRepository: registry.k8s.io
+etcd:
+  local:
+    dataDir: ""
+    extraArgs:
+      listen-metrics-urls: http://0.0.0.0:2381
 apiServer:
   extraArgs:
     audit-log-format: json
@@ -31,7 +38,6 @@ apiServer:
       name: localtime
       pathType: File
       readOnly: true
-apiVersion: kubeadm.k8s.io/v1beta3
 controllerManager:
   extraArgs:
     cluster-signing-duration: 876000h
@@ -45,14 +51,6 @@ controllerManager:
 dns:
   type: ""
   #imageRepository: sea.hub:5000/coredns
-etcd:
-  local:
-    dataDir: ""
-    extraArgs:
-      listen-metrics-urls: http://0.0.0.0:2381
-imageRepository: registry.k8s.io
-kind: ClusterConfiguration
-kubernetesVersion: v1.27.1
 networking:
   podSubnet: 100.64.0.0/10
   serviceSubnet: 10.96.0.0/22
@@ -78,6 +76,7 @@ controlPlane:
     bindPort: 6443
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
 authentication:
   anonymous:
     enabled: false
@@ -125,7 +124,6 @@ imageGCLowThresholdPercent: 80
 imageMinimumGCAge: 2m0s
 iptablesDropBit: 15
 iptablesMasqueradeBit: 14
-kind: KubeletConfiguration
 kubeAPIBurst: 10
 kubeAPIQPS: 5
 logging: {}
@@ -152,6 +150,7 @@ volumeStatsAggPeriod: 1m0s
 
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
 bindAddress: ""
 bindAddressHardFail: false
 clientConnection:
@@ -186,7 +185,6 @@ ipvs:
   tcpFinTimeout: 0s
   tcpTimeout: 0s
   udpTimeout: 0s
-kind: KubeProxyConfiguration
 metricsBindAddress: ""
 mode: ipvs
 nodePortAddresses: null

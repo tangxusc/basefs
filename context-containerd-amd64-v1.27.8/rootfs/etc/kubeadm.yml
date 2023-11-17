@@ -1,15 +1,21 @@
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 localAPIEndpoint:
-  advertiseAddress: 172.16.0.181
   bindPort: 6443
 nodeRegistration:
-  criSocket: /run/containerd/containerd.sock
-  taints: null
-
+  criSocket: unix:///run/containerd/containerd.sock
 ---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: v1.27.8
+imageRepository: registry.k8s.io
+etcd:
+  local:
+    imageTag: 3.5.9-0
+    dataDir: ""
+    extraArgs:
+      listen-metrics-urls: http://0.0.0.0:2381
 apiServer:
-  certSANs:
   extraArgs:
     audit-log-format: json
     audit-log-maxage: "7"
@@ -18,45 +24,33 @@ apiServer:
     audit-log-path: /var/log/kubernetes/audit.log
     audit-policy-file: /etc/kubernetes/audit-policy.yml
     enable-aggregator-routing: "true"
-    etcd-servers: https://172.16.0.181:2379
     feature-gates: ""
   extraVolumes:
-  - hostPath: /etc/kubernetes
-    mountPath: /etc/kubernetes
-    name: audit
-    pathType: DirectoryOrCreate
-  - hostPath: /var/log/kubernetes
-    mountPath: /var/log/kubernetes
-    name: audit-log
-    pathType: DirectoryOrCreate
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    pathType: File
-    readOnly: true
-apiVersion: kubeadm.k8s.io/v1beta3
-controlPlaneEndpoint: apiserver.cluster.local:6443
+    - hostPath: /etc/kubernetes
+      mountPath: /etc/kubernetes
+      name: audit
+      pathType: DirectoryOrCreate
+    - hostPath: /var/log/kubernetes
+      mountPath: /var/log/kubernetes
+      name: audit-log
+      pathType: DirectoryOrCreate
+    - hostPath: /etc/localtime
+      mountPath: /etc/localtime
+      name: localtime
+      pathType: File
+      readOnly: true
 controllerManager:
   extraArgs:
     cluster-signing-duration: 876000h
     feature-gates: ""
   extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    pathType: File
-    readOnly: true
+    - hostPath: /etc/localtime
+      mountPath: /etc/localtime
+      name: localtime
+      pathType: File
+      readOnly: true
 dns:
-  type: ""
-  #imageRepository: {{or .RegistryURL "sea.hub:5000"}}/coredns
-etcd:
-  local:
-    dataDir: ""
-    extraArgs:
-      listen-metrics-urls: http://0.0.0.0:2381
-imageRepository: {{or .RegistryURL "sea.hub:5000"}}
-kind: ClusterConfiguration
-kubernetesVersion: v1.27.1
+#  imageRepository: sea.hub:5000/coredns
 networking:
   podSubnet: 100.64.0.0/10
   serviceSubnet: 10.96.0.0/22
@@ -64,14 +58,25 @@ scheduler:
   extraArgs:
     feature-gates: ""
   extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    pathType: File
-    readOnly: true
-
+    - hostPath: /etc/localtime
+      mountPath: /etc/localtime
+      name: localtime
+      pathType: File
+      readOnly: true
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: JoinConfiguration
+caCertPath: /etc/kubernetes/pki/ca.crt
+discovery:
+  timeout: 5m0s
+nodeRegistration:
+  criSocket: /run/containerd/containerd.sock
+controlPlane:
+  localAPIEndpoint:
+    bindPort: 6443
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
 authentication:
   anonymous:
     enabled: false
@@ -85,7 +90,7 @@ authorization:
   webhook:
     cacheAuthorizedTTL: 5m0s
     cacheUnauthorizedTTL: 30s
-cgroupDriver: cgroupfs
+cgroupDriver: systemd
 cgroupsPerQOS: true
 clusterDomain: cluster.local
 configMapAndSecretChangeDetectionStrategy: Watch
@@ -99,7 +104,7 @@ cpuManagerReconcilePeriod: 10s
 enableControllerAttachDetach: true
 enableDebuggingHandlers: true
 enforceNodeAllocatable:
-- pods
+  - pods
 eventBurst: 10
 eventRecordQPS: 5
 evictionHard:
@@ -119,10 +124,9 @@ imageGCLowThresholdPercent: 80
 imageMinimumGCAge: 2m0s
 iptablesDropBit: 15
 iptablesMasqueradeBit: 14
-kind: KubeletConfiguration
 kubeAPIBurst: 10
 kubeAPIQPS: 5
-logging: {}
+logging: { }
 makeIPTablesUtilChains: true
 maxOpenFiles: 1000000
 maxPods: 110
@@ -146,6 +150,7 @@ volumeStatsAggPeriod: 1m0s
 
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
 bindAddress: ""
 bindAddressHardFail: false
 clientConnection:
@@ -172,7 +177,7 @@ iptables:
   syncPeriod: 0s
 ipvs:
   excludeCIDRs:
-  - 10.103.97.2/32
+    - 10.103.97.2/32
   minSyncPeriod: 0s
   scheduler: ""
   strictARP: false
@@ -180,14 +185,12 @@ ipvs:
   tcpFinTimeout: 0s
   tcpTimeout: 0s
   udpTimeout: 0s
-kind: KubeProxyConfiguration
 metricsBindAddress: ""
 mode: ipvs
 nodePortAddresses: null
 oomScoreAdj: null
 portRange: ""
 showHiddenMetricsForVersion: ""
-udpIdleTimeout: 0s
 winkernel:
   enableDSR: false
   networkName: ""
