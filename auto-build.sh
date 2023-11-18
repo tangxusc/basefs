@@ -3,6 +3,10 @@
 set -e
 
 default_k8s_version="v1.27.8"
+push="false"
+cri="containerd"
+platform="amd64"
+debug="false"
 
 for i in "$@"; do
   case $i in
@@ -23,7 +27,7 @@ for i in "$@"; do
     shift # past argument=value
     ;;
   --push)
-    push=true
+    push="true"
     shift # past argument=value
     ;;
   -p=* | --password=*)
@@ -53,7 +57,7 @@ for i in "$@"; do
     exit 0
     ;;
   -d | --debug)
-    debug=true
+    debug="true"
     set -x
     shift
     ;;
@@ -97,15 +101,15 @@ cd ${workdir};
 #    编译
 bash build.sh
 #    下载sealer
-wget https://github.com/sealerio/sealer/releases/download/v0.11.0/sealer-v0.11.0-linux-${platform}.tar.gz && tar -xvf sealer-v0.11.0-linux-${platform}.tar.gz && rm -rf sealer-v0.11.0-linux-${platform}.tar.gz
+wget https://github.com/tangxusc/sealer/releases/download/v0.11.1/sealer-v0.11.1-linux-${platform}.tar.gz && tar -xvf sealer-v0.11.1-linux-${platform}.tar.gz && rm -rf sealer-v0.11.1-linux-${platform}.tar.gz
 ./sealer build -t ${buildName} -f Kubefile
-if [[ "$push" == "true" ]]; then
+if [[ "${push}" == "true" ]]; then
   if [[ -n "$username" ]] && [[ -n "$password" ]]; then
     ./sealer login "$(echo "${buildName}" | awk -F/ '{print $1}')" -u "${username}" -p "${password}"
   fi
   ./sealer push ${buildName}
 fi
-if [[ $debug ]]; then
+if [[ "${debug}" == "true" ]]; then
   bash clean.sh
 fi
 rm -rf sealer
