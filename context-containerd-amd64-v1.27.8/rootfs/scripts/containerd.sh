@@ -29,6 +29,7 @@ sed -i "s/5000/${3:-5000}/g" "$dump_config_dir"
 mkdir -p /etc/containerd /etc/containerd/certs.d/_default
 containerd --config "$dump_config_dir" config dump >/etc/containerd/config.toml
 cp ${host_config_dir} /etc/containerd/certs.d/_default/hosts.toml
+setMaximumBufferSize
 disable_selinux
 systemctl daemon-reload
 systemctl enable containerd.service

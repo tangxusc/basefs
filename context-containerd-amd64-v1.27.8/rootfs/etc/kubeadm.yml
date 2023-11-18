@@ -70,7 +70,7 @@ caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   timeout: 5m0s
 nodeRegistration:
-  criSocket: /run/containerd/containerd.sock
+  criSocket: unix:///run/containerd/containerd.sock
 controlPlane:
   localAPIEndpoint:
     bindPort: 6443
