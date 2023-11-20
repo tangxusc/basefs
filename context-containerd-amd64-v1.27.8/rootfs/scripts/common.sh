@@ -8,6 +8,7 @@ command_exists() {
 setMaximumBufferSize(){
 #  echo "net.core.rmem_max = 2500000" | sudo tee /etc/sysctl.d/nextcloud-aio-buffer-increase.conf
   echo "net.core.rmem_max = 2500000" | tee /etc/sysctl.d/nextcloud-aio-buffer-increase.conf
+  sysctl "net.core.rmem_max=2500000"
   sysctl -p
 }
 
