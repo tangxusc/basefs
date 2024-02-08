@@ -1,4 +1,3 @@
-server = "https://registry-1.docker.io"
 
 [host."https://sea.hub:5000"]
   capabilities = ["pull", "resolve"]
